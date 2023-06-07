@@ -1,0 +1,49 @@
+resources:
+- name: repo
+  type: git
+  source:
+    uri: git@github.com:willianpc/playing-with-go.git
+    branch: master # required for "put"
+    private_key_passphrase: ...
+    private_key: |
+      -----BEGIN OPENSSH PRIVATE KEY-----
+      ...
+      -----END OPENSSH PRIVATE KEY-----
+
+jobs:
+- name: hello-world-job
+  plan:
+  - get: repo
+    trigger: true
+
+  - task: create-commit
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: gitea/gitea
+      inputs:
+      - name: repo
+      outputs:
+      - name: repo
+      params:
+        EMAIL: willianc@pm.me
+        GIT_AUTHOR_NAME: Willian Carvalho
+      run:
+        path: sh
+        args:
+        - -cx
+        - |
+          cd repo
+          date +%Y-%m-%d > todays-date
+          git add ./todays-date
+          git config --global user.email $EMAIL
+          git config --global user.name $GIT_AUTHOR_NAME
+          git commit -m "Update todays date"
+
+  # put has to stay after the git commit
+  - put: repo
+    params:
+      repository: repo
+

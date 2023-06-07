@@ -1,0 +1,4 @@
+---
+params:
+  - name: go_version
+    value: 1.18
