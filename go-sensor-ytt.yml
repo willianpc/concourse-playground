@@ -1,0 +1,40 @@
+#@ load("@ytt:data", "data")
+
+#@ def taskname(tag):
+#@  return "tests-"+tag.version
+#@ end
+
+resources:
+- name: repo
+  type: git
+  source:
+    uri: https://github.com/instana/go-sensor.git
+    branch: main
+
+jobs:
+- name: run-tests-job
+  plan:
+  - get: repo
+    trigger: true
+
+  - in_parallel:
+
+    #@ for/end tag in data.values.tags:
+    - task: #@ taskname(tag)
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: golang
+            tag: #@ tag.version
+        inputs:
+        - name: repo
+        run:
+          path: sh
+          args:
+          - -cx
+          - |
+            cd repo
+            make test
+
